@@ -11,6 +11,10 @@ app.get("/", (req, res,) => {
   res.send("Welcome to Tinyapp");
 });
 
+app.get ('/urls.json', (req, res) => {
+  res.json(urlDatabase);
+});
+
 app.listen(PORT, () => {
   console.log(`Tinyapp is listening on port ${PORT}.`);
 });
