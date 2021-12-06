@@ -7,6 +7,8 @@ const urlDatabase = {
   "1": "www.google.com"
 };
 
+app.set('view engine', 'ejs')
+
 app.get("/", (req, res,) => {
   res.send("Welcome to Tinyapp");
 });
