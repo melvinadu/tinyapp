@@ -3,8 +3,8 @@ const app = express();
 const PORT = 8080;
 
 const urlDatabase = {
-  "0213213": "www.lighthouselabs.ca",
-  "1213213": "www.google.com"
+  "b2xVn2": "www.lighthouselabs.ca",
+  "9sm5xK": "www.google.com"
 };
 
 app.set('view engine', 'ejs')
@@ -24,6 +24,11 @@ app.get('/hello', (req, res) => {
 app.get('/urls', (req,res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
+});
+
+app.get("/urls/:shortURL", (req, res) => {
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  res.render("urls_show", templateVars);
 });
 
 app.listen(PORT, () => {
