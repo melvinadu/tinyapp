@@ -5,6 +5,8 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
@@ -16,6 +18,12 @@ function generateRandomString() {
 };
 
 app.set('view engine', 'ejs')
+
+app.get('/', function (req, res) {
+  // Cookies that have not been signed
+  console.log('Cookies: ', req.cookies)
+
+});
 
 app.get("/", (req, res,) => {
   res.send("Welcome to Tinyapp");
@@ -63,9 +71,7 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-
   delete urlDatabase[shortURL];
-
   res.redirect(`/urls`);         // Respond redirect
 });
 
