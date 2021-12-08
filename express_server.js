@@ -12,6 +12,14 @@ function generateRandomString() {
   return Math.random().toString(20).substr(2, 6)
 };
 
+function findUserByEmail(email) {
+  for (let randomUserID in users) {
+    if (email === users[randomUserID].email) {
+      return users[randomUserID];
+    }
+  }
+};
+
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -52,7 +60,6 @@ app.get('/hello', (req, res) => {
 
 app.get('/urls', (req,res) => {
   const user = users[req.cookies["user_id"]];
-console.log(user);
   const templateVars = { 
     urls: urlDatabase, 
     user: user
@@ -76,6 +83,17 @@ app.get("/urls/register", (req, res) => {
   };
 
   res.render("urls_register", templateVars);
+});
+
+//GET response get login page
+app.get("/urls/login", (req, res) => {
+  
+  const templateVars = { 
+    user: users[req.cookies["user_id"]]
+  };
+
+
+  res.render("urls_login", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -122,12 +140,43 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const username = req.body.email;
+  const email = req.body.email;
+  const password = req.body.password;
+  
+  const userObject = findUserByEmail(email);
+  
+  if (password !== userObject.password) {
+    res.statusCode = 403;
+    res.send('<html><body>Invalid email or password!!</body></html>\n');
+    return;
+  }
 
-  res.cookie("user_id", username);
+  if (!userObject) {
+    res.statusCode = 403;
+    res.send('<html><body>Invalid email or password!!</body></html>\n');
+    return;
+  }
+
+
+  // res.cookie("user_id", username); // old cookie method
+
+  res.cookie("user_id", userObject.id);
 
   res.redirect(`/urls`);         // Respond redirect to index page
 });
+
+// const users = { 
+  //   "userRandomID": {
+  //     id: "userRandomID", 
+  //     email: "user@example.com", 
+  //     password: "purple-monkey-dinosaur"
+  //   },
+  //  "user2RandomID": {
+  //     id: "user2RandomID", 
+  //     email: "user2@example.com", 
+  //     password: "dishwasher-funk"
+  //   }
+  // }
 
 app.post("/logout", (req, res) => {
 
@@ -171,15 +220,3 @@ app.listen(PORT, () => {
   console.log(`Tinyapp is listening on port ${PORT}.`);
 });
 
-// const users = { 
-  //   "userRandomID": {
-  //     id: "userRandomID", 
-  //     email: "user@example.com", 
-  //     password: "purple-monkey-dinosaur"
-  //   },
-  //  "user2RandomID": {
-  //     id: "user2RandomID", 
-  //     email: "user2@example.com", 
-  //     password: "dishwasher-funk"
-  //   }
-  // }
