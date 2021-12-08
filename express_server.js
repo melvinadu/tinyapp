@@ -52,11 +52,21 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+//GET request for register page 
+app.get("/urls/register", (req, res) => {
+  
+  const templateVars = { 
+    username: req.cookies["username"]
+  };
+
+  res.render("urls_register", templateVars);
+});
+
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   //What would happen if a client requests a non-existent shortURL?
   if (!urlDatabase[shortURL]) {
-    res.send('<html><body>Error</body></html>\n');
+    res.send('<html><body>Error: you are trying to access a non-existent page </body></html>\n');
     return;
   }
   const templateVars = { 
@@ -86,14 +96,14 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
-  res.redirect(`/urls`);         // Respond redirect
+  res.redirect(`/urls`);         // Respond redirect to index page
 });
 
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   urlDatabase[id] = req.body.longURL;
 
-  res.redirect(`/urls`);         // Respond redirect
+  res.redirect(`/urls`);         // Respond redirect to index page
 });
 
 app.post("/login", (req, res) => {
@@ -101,15 +111,17 @@ app.post("/login", (req, res) => {
 
   res.cookie("username", username);
 
-  res.redirect(`/urls`);         // Respond redirect
+  res.redirect(`/urls`);         // Respond redirect to index page
 });
 
 app.post("/logout", (req, res) => {
 
   res.clearCookie("username")
 
-  res.redirect(`/urls`);         // Respond redirect
+  res.redirect(`/urls`);         // Respond redirect to index page
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Tinyapp is listening on port ${PORT}.`);
