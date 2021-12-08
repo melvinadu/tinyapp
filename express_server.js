@@ -25,18 +25,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+const users = {
+  userRandomID: {
+    id: 'userRandomID',
+    email: 'user@example.com',
+    password: 'purple-monkey-dinosaur'
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
-  }
-}
+  user2RandomID: {
+    id: 'user2RandomID',
+    email: 'user2@example.com',
+    password: 'dishwasher-funk'
+  },
+  e1cb87: { id: 'e1cb87', email: '123@example.com', password: '123' }
+};
 
 app.set('view engine', 'ejs')
 
@@ -77,21 +78,30 @@ app.get("/urls/new", (req, res) => {
 
 //GET response for register page 
 app.get("/urls/register", (req, res) => {
-  
+  const user = users[req.cookies["user_id"]];
+
   const templateVars = { 
-    user: null
+    user: user
   };
+
+  if (user) {
+    res.redirect(`/urls`);
+  }
 
   res.render("urls_register", templateVars);
 });
 
 //GET response get login page
 app.get("/urls/login", (req, res) => {
-  
+  const user = users[req.cookies["user_id"]];
+
   const templateVars = { 
-    user: users[req.cookies["user_id"]]
+    user: user
   };
 
+  if (user) {
+    res.redirect(`/urls`);
+  }
 
   res.render("urls_login", templateVars);
 });
@@ -159,7 +169,6 @@ app.post("/login", (req, res) => {
 
 
   // res.cookie("user_id", username); // old cookie method
-
   res.cookie("user_id", userObject.id);
 
   res.redirect(`/urls`);         // Respond redirect to index page
@@ -198,6 +207,8 @@ app.post("/register", (req, res) => {
   };
 
   res.cookie("user_id", users[newID].id);
+
+  console.log(users);
 
   res.redirect(`/urls`);         // Respond redirect to index page
 });
