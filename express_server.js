@@ -71,7 +71,7 @@ app.get("/urls/new", (req, res) => {
   const user = users[req.cookies["user_id"]];
   const templateVars = { 
     user: user
-}
+  }
   res.render("urls_new", templateVars);
 });
 
@@ -165,19 +165,6 @@ app.post("/login", (req, res) => {
   res.redirect(`/urls`);         // Respond redirect to index page
 });
 
-// const users = { 
-  //   "userRandomID": {
-  //     id: "userRandomID", 
-  //     email: "user@example.com", 
-  //     password: "purple-monkey-dinosaur"
-  //   },
-  //  "user2RandomID": {
-  //     id: "user2RandomID", 
-  //     email: "user2@example.com", 
-  //     password: "dishwasher-funk"
-  //   }
-  // }
-
 app.post("/logout", (req, res) => {
 
   res.clearCookie("user_id")
@@ -189,19 +176,18 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   
   if ((!req.body.email) || (!req.body.password)) {
-    
     res.statusCode = 400;
     res.send('<html><body>Email or Password is empty. Please enter an email and password!</body></html>\n');
     return;
   }
 
 
-    for (let element in users) {
-      if (req.body.email === users[element].email) {
-        res.send('<html><body>Email address is already in use</body></html>\n');
-      return;
-      }
+  for (let element in users) {
+    if (req.body.email === users[element].email) {
+      res.send('<html><body>Email address is already in use</body></html>\n');
+    return;
     }
+  }
 
   let newID = generateRandomString();
 
