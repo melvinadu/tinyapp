@@ -8,14 +8,27 @@ app.use(bodyParser.urlencoded({extended: true}));
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
+function generateRandomString() {
+  return Math.random().toString(20).substr(2, 6)
+};
+
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-function generateRandomString() {
-    return Math.random().toString(20).substr(2, 6)
-};
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
 
 app.set('view engine', 'ejs')
 
@@ -38,31 +51,36 @@ app.get('/hello', (req, res) => {
 });
 
 app.get('/urls', (req,res) => {
+  const user = users[req.cookies["user_id"]];
+console.log(user);
   const templateVars = { 
     urls: urlDatabase, 
-    username: req.cookies["username"]
+    user: user
 };
   res.render('urls_index', templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  const user = users[req.cookies["user_id"]];
   const templateVars = { 
-    username: req.cookies["username"]
+    user: user
 }
   res.render("urls_new", templateVars);
 });
 
-//GET request for register page 
+//GET response for register page 
 app.get("/urls/register", (req, res) => {
   
   const templateVars = { 
-    username: req.cookies["username"]
+    user: null
   };
 
   res.render("urls_register", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  const user = users[req.cookies["user_id"]];
+
   const shortURL = req.params.shortURL;
   //What would happen if a client requests a non-existent shortURL?
   if (!urlDatabase[shortURL]) {
@@ -72,7 +90,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 
     shortURL: shortURL, 
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"]
+    user: user
   };
   res.render("urls_show", templateVars);
 });
@@ -87,10 +105,7 @@ app.post("/urls", (req, res) => {
   let newID = generateRandomString();
   urlDatabase[newID] = req.body.longURL;
 
-  const templateVars = { 
-    username: req.cookies["username"]
-}
-  res.redirect(`/urls/${newID}`, templateVars);         // Respond redirect
+  res.redirect(`/urls/${newID}`);     // Respond redirect to new ID page
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -107,22 +122,64 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const username = req.body.username;
+  const username = req.body.email;
 
-  res.cookie("username", username);
+  res.cookie("user_id", username);
 
   res.redirect(`/urls`);         // Respond redirect to index page
 });
 
 app.post("/logout", (req, res) => {
 
-  res.clearCookie("username")
+  res.clearCookie("user_id")
 
   res.redirect(`/urls`);         // Respond redirect to index page
 });
 
+//POST response to handle incoming account creation
+app.post("/register", (req, res) => {
+  
+  if ((!req.body.email) || (!req.body.password)) {
+    
+    res.statusCode = 400;
+    res.send('<html><body>Email or Password is empty. Please enter an email and password!</body></html>\n');
+    return;
+  }
 
+
+    for (let element in users) {
+      if (req.body.email === users[element].email) {
+        res.send('<html><body>Email address is already in use</body></html>\n');
+      return;
+      }
+    }
+
+  let newID = generateRandomString();
+
+  users[newID] = {
+    id: `${newID}`,
+    email: req.body.email,
+    password: req.body.password
+  };
+
+  res.cookie("user_id", users[newID].id);
+
+  res.redirect(`/urls`);         // Respond redirect to index page
+});
 
 app.listen(PORT, () => {
   console.log(`Tinyapp is listening on port ${PORT}.`);
 });
+
+// const users = { 
+  //   "userRandomID": {
+  //     id: "userRandomID", 
+  //     email: "user@example.com", 
+  //     password: "purple-monkey-dinosaur"
+  //   },
+  //  "user2RandomID": {
+  //     id: "user2RandomID", 
+  //     email: "user2@example.com", 
+  //     password: "dishwasher-funk"
+  //   }
+  // }
