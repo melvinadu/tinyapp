@@ -5,12 +5,18 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
+// const cookieParser = require('cookie-parser');
+// app.use(cookieParser());
 
 const bcrypt = require('bcryptjs');
 const e = require('express');
 const salt = bcrypt.genSaltSync(10);
+
+const cookieSession = require('cookie-session');
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2']
+}));
 
 function generateRandomString() {
   return Math.random().toString(20).substr(2, 6)
@@ -90,7 +96,8 @@ app.set('view engine', 'ejs')
 // });
 
 app.get("/", (req, res,) => {
-  res.send("Welcome to Tinyapp");
+  res.send("Welcome to Tinyapp! Please register or log in to continue!");
+
 });
 
 app.get('/urls.json', (req, res) => {
@@ -98,7 +105,7 @@ app.get('/urls.json', (req, res) => {
 });
 
 app.get('/urls', (req,res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session["user_id"]];
   const templateVars = { 
     urls: urlsForUser(users.id), 
     user: user
@@ -114,7 +121,7 @@ app.get('/urls', (req,res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session["user_id"]];
   const templateVars = { 
     user: user
   }
@@ -127,7 +134,7 @@ app.get("/urls/new", (req, res) => {
 
 //GET response for register page 
 app.get("/urls/register", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session["user_id"]];
 
   const templateVars = { 
     user: user
@@ -142,7 +149,7 @@ app.get("/urls/register", (req, res) => {
 
 //GET response get login page
 app.get("/urls/login", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session["user_id"]];
 
   const templateVars = { 
     user: user
@@ -156,7 +163,7 @@ app.get("/urls/login", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session["user_id"]];
   
   const shortURL = req.params.shortURL;
   //What would happen if a client requests a non-existent shortURL?
@@ -198,7 +205,7 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session["user_id"]];
   
   if (!user) {
     res.send('<html><body>Error: You must log in before added any new URLs! </body></html>\n');
@@ -222,7 +229,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session["user_id"]];
 
   if (!user) {
     return res.status(400).send("Login first!")
@@ -242,7 +249,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session["user_id"]];
 
   if (!user) {
     return res.status(400).send("Login first!")
@@ -273,16 +280,19 @@ app.post("/login", (req, res) => {
   }
   
   // res.cookie("user_id", username); // old cookie method
-  res.cookie("user_id", userObject.id);
+  // res.cookie("user_id", userObject.id);
+  req.session["user_id"] = userObject.id;
+
 
   res.redirect(`/urls`);         // Respond redirect to index page
 });
 
 app.post("/logout", (req, res) => {
 
-  res.clearCookie("user_id")
+  // res.clearCookie("user_id")
+  req.session["user_id"] = null;
 
-  res.redirect(`/urls`);         // Respond redirect to index page
+  res.redirect(`/`);         // Respond redirect to index page
 });
 
 //POST response to handle incoming account creation
@@ -310,7 +320,8 @@ app.post("/register", (req, res) => {
     password: bcrypt.hashSync(req.body.password, salt)
   };
 
-  res.cookie("user_id", users[newID].id);
+  // res.cookie("user_id", users[newID].id);
+  req.session["user_id"] = users[newID].id;
 
   console.log(users);
 
