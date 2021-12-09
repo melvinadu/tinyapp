@@ -7,9 +7,6 @@ const PORT = 8080;
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
-// const cookieParser = require('cookie-parser');
-// app.use(cookieParser());
-
 const bcrypt = require('bcryptjs');
 const e = require('express');
 const salt = bcrypt.genSaltSync(10);
@@ -20,7 +17,7 @@ app.use(cookieSession({
   keys: ['key1', 'key2']
 }));
 
-//HELPER FUNCTIONS
+//HELPER FUNCTION TO FIND URLS FOR USER
 const urlsForUser = function(pid) {
   const subset = {};
 
@@ -32,6 +29,7 @@ const urlsForUser = function(pid) {
   return subset;
 }
 
+//HELPER FUNCTION TO AUTHENTICATE USER
 const authenticateUser = function(email, password) {
   //retrieve the user with that email
   const user = helpers.findUserByEmail(email, users);
@@ -46,12 +44,6 @@ const authenticateUser = function(email, password) {
     return false;
   }
 };
-
-// Old database structure
-// const urlDatabase = {
-//   b2xVn2:  "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
 
 const urlDatabase = {
   b6UTxQ: {
@@ -80,15 +72,8 @@ const users = {
 
 app.set('view engine', 'ejs')
 
-// app.get('/', function (req, res) {
-//   // Cookies that have not been signed
-//   console.log('Cookies: ', req.cookies)
- 
-// });
-
 app.get("/", (req, res,) => {
   res.send("Welcome to Tinyapp! Please register or log in to continue!");
-
 });
 
 app.get('/urls.json', (req, res) => {
@@ -97,6 +82,7 @@ app.get('/urls.json', (req, res) => {
 
 app.get('/urls', (req,res) => {
   const user = users[req.session["user_id"]];
+
   const templateVars = { 
     urls: urlsForUser(users.id), 
     user: user
@@ -113,13 +99,16 @@ app.get('/urls', (req,res) => {
 
 app.get("/urls/new", (req, res) => {
   const user = users[req.session["user_id"]];
+
   const templateVars = { 
     user: user
   }
-// if user is not logged in, redirect to login page
+
+  // if user is not logged in, redirect to login page
   if (!user) {
     res.redirect(`/urls/login`);
   }
+
   res.render("urls_new", templateVars);
 });
 
@@ -130,7 +119,7 @@ app.get("/urls/register", (req, res) => {
   const templateVars = { 
     user: user
   };
-//if logged in, user trying to access register page is redirected to home page
+  //if logged in, user trying to access register page is redirected to home page
   if (user) {
     res.redirect(`/urls`);
   }
@@ -145,7 +134,7 @@ app.get("/urls/login", (req, res) => {
   const templateVars = { 
     user: user
   };
-//if logged in, user trying to access login page is redirected to home page
+  //if logged in, user trying to access login page is redirected to home page
   if (user) {
     res.redirect(`/urls`);
   }
@@ -168,22 +157,21 @@ app.get("/urls/:shortURL", (req, res) => {
   }
 
   if (urlDatabase[req.params.shortURL].userID === users.id) {
-  const templateVars = { 
-    shortURL: shortURL, 
-    longURL: urlDatabase[req.params.shortURL].longURL,
-    user: user
-  };
-  res.render("urls_show", templateVars);
+    const templateVars = { 
+      shortURL: shortURL, 
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      user: user
+    };
+    res.render("urls_show", templateVars);
   } else {
     res.send('<html><body>Error: You are trying to access a page you do not own!</body></html>\n');
     return;
   }
-
-
 });
 
 app.get('/u/:shortURL', (req, res) => {
   const shortURL = req.params.shortURL;
+
   //What would happen if a client requests a non-existent shortURL?
   if (!urlDatabase[shortURL]) {
     res.send('<html><body>Error: you are trying to access a non-existent shortURL </body></html>\n');
@@ -203,19 +191,14 @@ app.post("/urls", (req, res) => {
     return;
   }
 
-  console.log(req.body);  // Log the POST request body to the console
   let newID = helpers.generateRandomString();
-  console.log(newID);
 
-//updating the new database with the newly generated long URL
+  //updating the new database with the newly generated long URL
   urlDatabase[newID] = {
     longURL: req.body.longURL,   //another attempt that did not work: urlDatabase[newID]["longURL"] = req.body.longURL;
     userID: users.id   //another attempt that did not work: urlDatabase[newID]["userID"] = user.id;
   };
-  
-
-  console.log(urlDatabase);
-  
+    
   res.redirect(`/urls/${newID}`);     // Respond redirect to new ID page
 });
 
@@ -230,16 +213,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect(`/urls`);           // Respond redirect to index page
-
   } else {
     res.status(401).send("You do not own this page");
   }
-
-
 });
 
 app.post("/urls/:id", (req, res) => {
-  
   const user = users[req.session["user_id"]];
 
   if (!user) {
@@ -249,13 +228,10 @@ app.post("/urls/:id", (req, res) => {
   if (urlDatabase[req.params.id].userID === users.id) {
     const id = req.params.id;
     urlDatabase[id].longURL = req.body.longURL;
-
     res.redirect(`/urls/${id}`);           // Respond redirect to index page
-
   } else {
     res.status(401).send("You do not own this page");
   }
-
 });
 
 app.post("/login", (req, res) => {
@@ -270,17 +246,12 @@ app.post("/login", (req, res) => {
     return;
   }
   
-  // res.cookie("user_id", username); // old cookie method
-  // res.cookie("user_id", userObject.id);
   req.session["user_id"] = userObject.id;
-
 
   res.redirect(`/urls`);         // Respond redirect to index page
 });
 
 app.post("/logout", (req, res) => {
-
-  // res.clearCookie("user_id")
   req.session["user_id"] = null;
 
   res.redirect(`/`);         // Respond redirect to index page
@@ -288,13 +259,11 @@ app.post("/logout", (req, res) => {
 
 //POST response to handle incoming account creation
 app.post("/register", (req, res) => {
-  
   if ((!req.body.email) || (!req.body.password)) {
     res.statusCode = 400;
     res.send('<html><body>Email or Password is empty. Please enter an email and password!</body></html>\n');
     return;
   }
-
 
   for (let element in users) {
     if (req.body.email === users[element].email) {
@@ -311,10 +280,7 @@ app.post("/register", (req, res) => {
     password: bcrypt.hashSync(req.body.password, salt)
   };
 
-  // res.cookie("user_id", users[newID].id);
   req.session["user_id"] = users[newID].id;
-
-  console.log(users);
 
   res.redirect(`/urls`);         // Respond redirect to index page
 });
