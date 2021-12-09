@@ -8,6 +8,10 @@ app.use(bodyParser.urlencoded({extended: true}));
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
+const bcrypt = require('bcryptjs');
+const e = require('express');
+const salt = bcrypt.genSaltSync(10);
+
 function generateRandomString() {
   return Math.random().toString(20).substr(2, 6)
 };
@@ -31,6 +35,21 @@ function urlsForUser(pid) {
   return subset;
 }
 
+function authenticateUser(email, password) {
+  //retrieve the user with that email
+  const user = findUserByEmail(email);
+
+  //if we got a user bacj and the passwords match then return userObj
+    // if (user && user.password === password) Old method previous to hashing password
+  if (user && bcrypt.compareSync(password, user.password)) {
+    //user is authenticated
+    return user;
+  } else {
+    //otherwise return false 
+    return false;
+  }
+};
+
 // Old database structure
 // const urlDatabase = {
 //   b2xVn2:  "http://www.lighthouselabs.ca",
@@ -52,14 +71,14 @@ const users = {
   userRandomID: {
     id: 'userRandomID',
     email: 'user@example.com',
-    password: 'purple-monkey-dinosaur'
+    password: bcrypt.hashSync('purple-monkey-dinosaur', salt)
   },
   user2RandomID: {
     id: 'user2RandomID',
     email: 'user2@example.com',
-    password: 'dishwasher-funk'
+    password: bcrypt.hashSync('dishwasher-funk', salt)
   },
-  e1cb87: { id: 'e1cb87', email: '123@example.com', password: '123' }
+  e1cb87: { id: 'e1cb87', email: '123@example.com', password: bcrypt.hashSync('123', salt) }
 };
 
 app.set('view engine', 'ejs')
@@ -245,21 +264,14 @@ app.post("/login", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   
-  const userObject = findUserByEmail(email);
+  const userObject = authenticateUser(email, password);
  
-  if (!userObject || (userObject.password !== password)) {
-    res.statusCode = 403;
-    res.send('<html><body>Invalid email or password!!</body></html>\n');
-    return;
-  }
-
   if (!userObject) {
     res.statusCode = 403;
     res.send('<html><body>Invalid email or password!!</body></html>\n');
     return;
   }
-
-
+  
   // res.cookie("user_id", username); // old cookie method
   res.cookie("user_id", userObject.id);
 
@@ -295,7 +307,7 @@ app.post("/register", (req, res) => {
   users[newID] = {
     id: `${newID}`,
     email: req.body.email,
-    password: req.body.password
+    password: bcrypt.hashSync(req.body.password, salt)
   };
 
   res.cookie("user_id", users[newID].id);
