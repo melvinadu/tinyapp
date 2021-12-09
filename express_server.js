@@ -18,19 +18,28 @@ app.use(cookieSession({
   keys: ['key1', 'key2']
 }));
 
-function generateRandomString() {
+const generateRandomString = function() {
   return Math.random().toString(20).substr(2, 6)
 };
 
-function findUserByEmail(email) {
-  for (let randomUserID in users) {
-    if (email === users[randomUserID].email) {
-      return users[randomUserID];
+// old helper function
+// const findUserByEmail = function(email) {
+//   for (let randomUserID in users) {
+//     if (email === users[randomUserID].email) {
+//       return users[randomUserID];
+//     }
+//   }
+// };
+
+const findUserByEmail = function(email, database) {
+  for (let randomUserID in database) {
+    if (email === database[randomUserID].email) {
+      return database[randomUserID];
     }
   }
 };
 
-function urlsForUser(pid) {
+const urlsForUser = function(pid) {
   const subset = {};
 
   for (const id in urlDatabase) {
@@ -41,9 +50,9 @@ function urlsForUser(pid) {
   return subset;
 }
 
-function authenticateUser(email, password) {
+const authenticateUser = function(email, password) {
   //retrieve the user with that email
-  const user = findUserByEmail(email);
+  const user = findUserByEmail(email, users);
 
   //if we got a user bacj and the passwords match then return userObj
     // if (user && user.password === password) Old method previous to hashing password
