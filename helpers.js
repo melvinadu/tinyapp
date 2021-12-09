@@ -21,23 +21,8 @@ const findUserByEmail = function(email, database) {
   }
 };
 
-const authenticateUser = function(email, password) {
-  //retrieve the user with that email
-  const user = findUserByEmail(email, users);
-
-  //if we got a user bacj and the passwords match then return userObj
-    // if (user && user.password === password) Old method previous to hashing password
-  if (user && bcrypt.compareSync(password, user.password)) {
-    //user is authenticated
-    return user;
-  } else {
-    //otherwise return false 
-    return false;
-  }
-};
 
 module.exports = {
   generateRandomString, 
-  findUserByEmail, 
-  authenticateUser
+  findUserByEmail
 }

@@ -20,7 +20,7 @@ app.use(cookieSession({
   keys: ['key1', 'key2']
 }));
 
-//HELPER FUNCTION
+//HELPER FUNCTIONS
 const urlsForUser = function(pid) {
   const subset = {};
 
@@ -31,6 +31,22 @@ const urlsForUser = function(pid) {
   }
   return subset;
 }
+
+const authenticateUser = function(email, password) {
+  //retrieve the user with that email
+  const user = helpers.findUserByEmail(email, users);
+
+  //if we got a user bacj and the passwords match then return userObj
+    // if (user && user.password === password) Old method previous to hashing password
+  if (user && bcrypt.compareSync(password, user.password)) {
+    //user is authenticated
+    return user;
+  } else {
+    //otherwise return false 
+    return false;
+  }
+};
+
 // Old database structure
 // const urlDatabase = {
 //   b2xVn2:  "http://www.lighthouselabs.ca",
@@ -246,7 +262,7 @@ app.post("/login", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   
-  const userObject = helpers.authenticateUser(email, password);
+  const userObject = authenticateUser(email, password);
  
   if (!userObject) {
     res.statusCode = 403;
