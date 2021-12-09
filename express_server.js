@@ -20,9 +20,21 @@ function findUserByEmail(email) {
   }
 };
 
+// Old database structure
+// const urlDatabase = {
+//   b2xVn2:  "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
+
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
 };
 
 const users = {
@@ -41,11 +53,11 @@ const users = {
 
 app.set('view engine', 'ejs')
 
-app.get('/', function (req, res) {
-  // Cookies that have not been signed
-  console.log('Cookies: ', req.cookies)
+// app.get('/', function (req, res) {
+//   // Cookies that have not been signed
+//   console.log('Cookies: ', req.cookies)
  
-});
+// });
 
 app.get("/", (req, res,) => {
   res.send("Welcome to Tinyapp");
@@ -53,10 +65,6 @@ app.get("/", (req, res,) => {
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
-});
-
-app.get('/hello', (req, res) => {
-  res.send('<html><body>Hello <b>World</b></body></html>\n')
 });
 
 app.get('/urls', (req,res) => {
@@ -73,6 +81,10 @@ app.get("/urls/new", (req, res) => {
   const templateVars = { 
     user: user
   }
+// if user is not logged in, redirect to login page
+  if (!user) {
+    res.redirect(`/urls/login`);
+  }
   res.render("urls_new", templateVars);
 });
 
@@ -83,7 +95,7 @@ app.get("/urls/register", (req, res) => {
   const templateVars = { 
     user: user
   };
-
+//if logged in, user trying to access register page is redirected to home page
   if (user) {
     res.redirect(`/urls`);
   }
@@ -98,7 +110,7 @@ app.get("/urls/login", (req, res) => {
   const templateVars = { 
     user: user
   };
-
+//if logged in, user trying to access login page is redirected to home page
   if (user) {
     res.redirect(`/urls`);
   }
@@ -112,27 +124,52 @@ app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   //What would happen if a client requests a non-existent shortURL?
   if (!urlDatabase[shortURL]) {
-    res.send('<html><body>Error: you are trying to access a non-existent page </body></html>\n');
+    res.send('<html><body>Error: you are trying to access a non-existent shortURL </body></html>\n');
     return;
   }
+
   const templateVars = { 
     shortURL: shortURL, 
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
     user: user
   };
   res.render("urls_show", templateVars);
 });
 
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const shortURL = req.params.shortURL;
+  //What would happen if a client requests a non-existent shortURL?
+  if (!urlDatabase[shortURL]) {
+    res.send('<html><body>Error: you are trying to access a non-existent shortURL </body></html>\n');
+    return;
+  }
+
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+
   res.redirect(longURL);
 });
 
 app.post("/urls", (req, res) => {
+  const user = users[req.cookies["user_id"]];
+  
+  if (!user) {
+    res.send('<html><body>Error: You must log in before added any new URLs! </body></html>\n');
+    return;
+  }
+
   console.log(req.body);  // Log the POST request body to the console
   let newID = generateRandomString();
-  urlDatabase[newID] = req.body.longURL;
+  console.log(newID);
 
+//updating the new database with the newly generated long URL
+  urlDatabase[newID] = {
+    longURL: req.body.longURL,   //another attempt that did not work: urlDatabase[newID]["longURL"] = req.body.longURL;
+    userID: user.id   //another attempt that did not work: urlDatabase[newID]["userID"] = user.id;
+  };
+  
+
+  console.log(urlDatabase);
+  
   res.redirect(`/urls/${newID}`);     // Respond redirect to new ID page
 });
 
@@ -150,12 +187,12 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
+  let email = req.body.email;
+  let password = req.body.password;
   
   const userObject = findUserByEmail(email);
   
-  if (password !== userObject.password) {
+  if (userObject.password !== password) {
     res.statusCode = 403;
     res.send('<html><body>Invalid email or password!!</body></html>\n');
     return;
