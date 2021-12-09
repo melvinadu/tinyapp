@@ -20,6 +20,17 @@ function findUserByEmail(email) {
   }
 };
 
+function urlsForUser(pid) {
+  const subset = {};
+
+  for (const id in urlDatabase) {
+    if (urlDatabase[id].userID === pid) {
+      subset[id] = urlDatabase[id];
+    }
+  }
+  return subset;
+}
+
 // Old database structure
 // const urlDatabase = {
 //   b2xVn2:  "http://www.lighthouselabs.ca",
@@ -70,13 +81,13 @@ app.get('/urls.json', (req, res) => {
 app.get('/urls', (req,res) => {
   const user = users[req.cookies["user_id"]];
   const templateVars = { 
-    urls: urlDatabase, 
+    urls: urlsForUser(users.id), 
     user: user
   };
 
   // if user is not logged in, send error message
   if (!user) {
-    res.send('<html><body>Error: you are trying to access a non-existent shortURL </body></html>\n');
+    res.send('<html><body>Error: Please log in before trying to access your URLs. </body></html>\n');
     return;  
   }
 
@@ -127,7 +138,7 @@ app.get("/urls/login", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const user = users[req.cookies["user_id"]];
-
+  
   const shortURL = req.params.shortURL;
   //What would happen if a client requests a non-existent shortURL?
   if (!urlDatabase[shortURL]) {
@@ -135,12 +146,23 @@ app.get("/urls/:shortURL", (req, res) => {
     return;
   }
 
+  if (!user) {
+    return res.status(400).send("Login first!")
+  }
+
+  if (urlDatabase[req.params.shortURL].userID === users.id) {
   const templateVars = { 
     shortURL: shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL,
     user: user
   };
   res.render("urls_show", templateVars);
+  } else {
+    res.send('<html><body>Error: You are trying to access a page you do not own!</body></html>\n');
+    return;
+  }
+
+
 });
 
 app.get('/u/:shortURL', (req, res) => {
@@ -171,7 +193,7 @@ app.post("/urls", (req, res) => {
 //updating the new database with the newly generated long URL
   urlDatabase[newID] = {
     longURL: req.body.longURL,   //another attempt that did not work: urlDatabase[newID]["longURL"] = req.body.longURL;
-    userID: user.id   //another attempt that did not work: urlDatabase[newID]["userID"] = user.id;
+    userID: users.id   //another attempt that did not work: urlDatabase[newID]["userID"] = user.id;
   };
   
 
@@ -181,16 +203,42 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
+  const user = users[req.cookies["user_id"]];
+
+  if (!user) {
+    return res.status(400).send("Login first!")
+  }
+
+  if (urlDatabase[req.params.shortURL].userID === users.id) {
+    const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
-  res.redirect(`/urls`);         // Respond redirect to index page
+  res.redirect(`/urls`);           // Respond redirect to index page
+
+  } else {
+    res.status(401).send("You do not own this page");
+  }
+
+
 });
 
 app.post("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  urlDatabase[id] = req.body.longURL;
+  
+  const user = users[req.cookies["user_id"]];
 
-  res.redirect(`/urls`);         // Respond redirect to index page
+  if (!user) {
+    return res.status(400).send("Login first!")
+  }
+
+  if (urlDatabase[req.params.id].userID === users.id) {
+    const id = req.params.id;
+    urlDatabase[id].longURL = req.body.longURL;
+
+    res.redirect(`/urls/${id}`);           // Respond redirect to index page
+
+  } else {
+    res.status(401).send("You do not own this page");
+  }
+
 });
 
 app.post("/login", (req, res) => {
@@ -198,8 +246,8 @@ app.post("/login", (req, res) => {
   let password = req.body.password;
   
   const userObject = findUserByEmail(email);
-  
-  if (userObject.password !== password) {
+ 
+  if (!userObject || (userObject.password !== password)) {
     res.statusCode = 403;
     res.send('<html><body>Invalid email or password!!</body></html>\n');
     return;
