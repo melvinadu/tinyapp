@@ -1,4 +1,6 @@
 const express = require ('express');
+const helpers = require ('./helpers');
+
 const app = express();
 const PORT = 8080;
 
@@ -18,27 +20,7 @@ app.use(cookieSession({
   keys: ['key1', 'key2']
 }));
 
-const generateRandomString = function() {
-  return Math.random().toString(20).substr(2, 6)
-};
-
-// old helper function
-// const findUserByEmail = function(email) {
-//   for (let randomUserID in users) {
-//     if (email === users[randomUserID].email) {
-//       return users[randomUserID];
-//     }
-//   }
-// };
-
-const findUserByEmail = function(email, database) {
-  for (let randomUserID in database) {
-    if (email === database[randomUserID].email) {
-      return database[randomUserID];
-    }
-  }
-};
-
+//HELPER FUNCTION
 const urlsForUser = function(pid) {
   const subset = {};
 
@@ -49,22 +31,6 @@ const urlsForUser = function(pid) {
   }
   return subset;
 }
-
-const authenticateUser = function(email, password) {
-  //retrieve the user with that email
-  const user = findUserByEmail(email, users);
-
-  //if we got a user bacj and the passwords match then return userObj
-    // if (user && user.password === password) Old method previous to hashing password
-  if (user && bcrypt.compareSync(password, user.password)) {
-    //user is authenticated
-    return user;
-  } else {
-    //otherwise return false 
-    return false;
-  }
-};
-
 // Old database structure
 // const urlDatabase = {
 //   b2xVn2:  "http://www.lighthouselabs.ca",
@@ -222,7 +188,7 @@ app.post("/urls", (req, res) => {
   }
 
   console.log(req.body);  // Log the POST request body to the console
-  let newID = generateRandomString();
+  let newID = helpers.generateRandomString();
   console.log(newID);
 
 //updating the new database with the newly generated long URL
@@ -280,7 +246,7 @@ app.post("/login", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   
-  const userObject = authenticateUser(email, password);
+  const userObject = helpers.authenticateUser(email, password);
  
   if (!userObject) {
     res.statusCode = 403;
@@ -321,7 +287,7 @@ app.post("/register", (req, res) => {
     }
   }
 
-  let newID = generateRandomString();
+  let newID = helpers.generateRandomString();
 
   users[newID] = {
     id: `${newID}`,
