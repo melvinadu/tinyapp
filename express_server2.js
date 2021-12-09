@@ -20,6 +20,17 @@ function findUserByEmail(email) {
   }
 };
 
+function urlsForUser(pid) {
+  const subset = {};
+
+  for (const id in urlDatabase) {
+    if (urlDatabase[id].userID === pid) {
+      subset[id] = urlDatabase[id];
+    }
+  }
+  return subset;
+}
+
 // Old database structure
 // const urlDatabase = {
 //   b2xVn2:  "http://www.lighthouselabs.ca",
@@ -70,7 +81,7 @@ app.get('/urls.json', (req, res) => {
 app.get('/urls', (req,res) => {
   const user = users[req.cookies["user_id"]];
   const templateVars = { 
-    urls: urlDatabase, 
+    urls: urlsForUser(user.id), 
     user: user
   };
 
@@ -127,7 +138,7 @@ app.get("/urls/login", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const user = users[req.cookies["user_id"]];
-
+  
   const shortURL = req.params.shortURL;
   //What would happen if a client requests a non-existent shortURL?
   if (!urlDatabase[shortURL]) {
@@ -135,12 +146,23 @@ app.get("/urls/:shortURL", (req, res) => {
     return;
   }
 
+  if (!user) {
+    return res.status(400).send("Login first!")
+  }
+
+  if (urlDatabase[req.params.shortURL].userID === user.id) {
   const templateVars = { 
     shortURL: shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL,
     user: user
   };
   res.render("urls_show", templateVars);
+  } else {
+    res.send('<html><body>Error</body></html>\n');
+    return;
+  }
+
+
 });
 
 app.get('/u/:shortURL', (req, res) => {
@@ -181,16 +203,42 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
+  const user = users[req.cookies["user_id"]];
+
+  if (!user) {
+    return res.status(400).send("Login first!")
+  }
+
+  if (urlDatabase[req.params.shortURL].userID === user.id) {
+    const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
-  res.redirect(`/urls`);         // Respond redirect to index page
+  res.redirect(`/urls`);           // Respond redirect to index page
+
+  } else {
+    res.status(401).send("You do not own this page");
+  }
+
+
 });
 
 app.post("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  urlDatabase[id] = req.body.longURL;
+  
+  const user = users[req.cookies["user_id"]];
 
-  res.redirect(`/urls`);         // Respond redirect to index page
+  if (!user) {
+    return res.status(400).send("Login first!")
+  }
+
+  if (urlDatabase[req.params.id].userID === user.id) {
+    const id = req.params.id;
+    urlDatabase[id] = req.body.longURL;
+
+    res.redirect(`/urls/${id}`);           // Respond redirect to index page
+
+  } else {
+    res.status(401).send("You do not own this page");
+  }
+
 });
 
 app.post("/login", (req, res) => {
