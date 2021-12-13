@@ -73,8 +73,6 @@ const users = {
 app.set('view engine', 'ejs')
 
 app.get("/", (req, res,) => {
-  // res.send("Welcome to Tinyapp! Please register or log in to continue!");
-
   const user = users[req.session["user_id"]];
 
   const templateVars = { 
