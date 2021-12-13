@@ -73,7 +73,21 @@ const users = {
 app.set('view engine', 'ejs')
 
 app.get("/", (req, res,) => {
-  res.send("Welcome to Tinyapp! Please register or log in to continue!");
+  // res.send("Welcome to Tinyapp! Please register or log in to continue!");
+
+  const user = users[req.session["user_id"]];
+
+  const templateVars = { 
+    urls: urlsForUser(users.id), 
+    user: user
+  };
+
+  // if user is not logged in, redirect to login
+  if (!user) {
+    res.redirect(`/login`);
+  }
+
+  res.render('urls_index', templateVars);
 });
 
 app.get('/urls.json', (req, res) => {
@@ -106,14 +120,14 @@ app.get("/urls/new", (req, res) => {
 
   // if user is not logged in, redirect to login page
   if (!user) {
-    res.redirect(`/urls/login`);
+    res.redirect(`/login`);
   }
 
   res.render("urls_new", templateVars);
 });
 
 //GET response for register page 
-app.get("/urls/register", (req, res) => {
+app.get("/register", (req, res) => {
   const user = users[req.session["user_id"]];
 
   const templateVars = { 
@@ -128,12 +142,13 @@ app.get("/urls/register", (req, res) => {
 });
 
 //GET response get login page
-app.get("/urls/login", (req, res) => {
+app.get("/login", (req, res) => {
   const user = users[req.session["user_id"]];
 
   const templateVars = { 
     user: user
   };
+  
   //if logged in, user trying to access login page is redirected to home page
   if (user) {
     res.redirect(`/urls`);
