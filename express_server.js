@@ -48,24 +48,24 @@ const authenticateUser = function(email, password) {
 const urlDatabase = {
   b6UTxQ: {
       longURL: "https://www.tsn.ca",
-      userID: "aJ48lW"
+      userID: "userRandomID"
   },
   i3BoGr: {
       longURL: "https://www.google.ca",
-      userID: "aJ48lW"
+      userID: "user2RandomID"
   }
 };
 
 const users = {
   userRandomID: {
     id: 'userRandomID',
-    email: 'user@example.com',
-    password: bcrypt.hashSync('purple-monkey-dinosaur', salt)
+    email: 'a@a.com',
+    password: bcrypt.hashSync('123', salt)
   },
   user2RandomID: {
     id: 'user2RandomID',
-    email: 'user2@example.com',
-    password: bcrypt.hashSync('dishwasher-funk', salt)
+    email: 'b@b.com',
+    password: bcrypt.hashSync('123', salt)
   },
   e1cb87: { id: 'e1cb87', email: '123@example.com', password: bcrypt.hashSync('123', salt) }
 };
@@ -74,10 +74,11 @@ app.set('view engine', 'ejs')
 
 app.get("/", (req, res,) => {
   const user = users[req.session["user_id"]];
-
+  const urls = user ? urlsForUser(user.id) : {}
+  
   const templateVars = { 
-    urls: urlsForUser(users.id), 
-    user: user
+    urls,
+    user
   };
 
   // if user is not logged in, redirect to login
@@ -93,10 +94,15 @@ app.get('/urls.json', (req, res) => {
 });
 
 app.get('/urls', (req,res) => {
-  const user = users[req.session["user_id"]];
+  const userId = req.session["user_id"]
+  console.log(">>>>:", userId)
+  const user = users[userId];
+
+  const urls = urlsForUser(userId)
+  console.log("!!!!:", urls)
 
   const templateVars = { 
-    urls: urlsForUser(users.id), 
+    urls: urlsForUser(user.id), 
     user: user
   };
 
@@ -169,7 +175,7 @@ app.get("/urls/:shortURL", (req, res) => {
     return res.status(400).send("Login first!")
   }
 
-  if (urlDatabase[req.params.shortURL].userID === users.id) {
+  if (urlDatabase[req.params.shortURL].userID === user.id) {
     const templateVars = { 
       shortURL: shortURL, 
       longURL: urlDatabase[req.params.shortURL].longURL,
@@ -209,10 +215,11 @@ app.post("/urls", (req, res) => {
   //updating the new database with the newly generated long URL
   urlDatabase[newID] = {
     longURL: req.body.longURL,   //another attempt that did not work: urlDatabase[newID]["longURL"] = req.body.longURL;
-    userID: users.id   //another attempt that did not work: urlDatabase[newID]["userID"] = user.id;
+    userID: user.id   //another attempt that did not work: urlDatabase[newID]["userID"] = user.id;
   };
     
   res.redirect(`/urls/${newID}`);     // Respond redirect to new ID page
+  console.log("1111111:", urlDatabase)
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -222,7 +229,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     return res.status(400).send("Login first!")
   }
 
-  if (urlDatabase[req.params.shortURL].userID === users.id) {
+  if (urlDatabase[req.params.shortURL].userID === user.id) {
     const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect(`/urls`);           // Respond redirect to index page
@@ -238,7 +245,7 @@ app.post("/urls/:id", (req, res) => {
     return res.status(400).send("Login first!")
   }
 
-  if (urlDatabase[req.params.id].userID === users.id) {
+  if (urlDatabase[req.params.id].userID === user.id) {
     const id = req.params.id;
     urlDatabase[id].longURL = req.body.longURL;
     res.redirect(`/urls/${id}`);           // Respond redirect to index page
